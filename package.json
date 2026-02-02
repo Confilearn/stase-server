@@ -1,15 +1,27 @@
 {
-  "name": "server",
+  "name": "stase-server",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Express.js backend server for the Stase fintech application",
+  "main": "src/app.js",
   "scripts": {
     "start": "node src/app.js",
-    "dev": "nodemon src/app.js"
+    "dev": "nodemon src/app.js",
+    "test": "node test/test-health.js",
+    "test:api": "node test/runAllTests.js",
+    "test:auth": "node test/test-createAccount.js && node test/test-checkUser.js && node test/test-createUserTransactionPin.js",
+    "test:transactions": "node test/test-depositWithdraw.js && node test/test-transferMoney.js && node test/test-convertMoney.js",
+    "test:accounts": "node test/test-fetchUserDetails.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "express",
+    "mongodb",
+    "fintech",
+    "banking",
+    "api",
+    "transactions"
+  ],
+  "author": "Confilearn",
+  "license": "MIT",
   "type": "module",
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -18,5 +30,8 @@
     "express": "^5.2.1",
     "mongoose": "^9.1.5",
     "nodemon": "^3.1.11"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

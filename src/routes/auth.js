@@ -1,0 +1,34 @@
+import express from "express";
+import { verifyAuth } from "../middleware/auth.js";
+import {
+  createAccount,
+  checkUser,
+  createUserTransactionPin,
+} from "../controllers/authController.js";
+
+const router = express.Router();
+
+/**
+ * Authentication routes
+ * Handles user registration, user lookup, and PIN management
+ */
+
+/**
+ * POST /api/auth/create-account
+ * Create a new user account with default transaction PIN
+ */
+router.post("/create-account", createAccount);
+
+/**
+ * POST /api/auth/check-user
+ * Check if a user exists by email or username
+ */
+router.post("/check-user", checkUser);
+
+/**
+ * POST /api/auth/create-transaction-pin
+ * Create or update user's transaction PIN (requires authentication)
+ */
+router.post("/create-transaction-pin", verifyAuth, createUserTransactionPin);
+
+export default router;
