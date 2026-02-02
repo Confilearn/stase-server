@@ -20,7 +20,7 @@
     "api",
     "transactions"
   ],
-  "author": "Stase Team",
+  "author": "Confilearn",
   "license": "MIT",
   "type": "module",
   "dependencies": {
