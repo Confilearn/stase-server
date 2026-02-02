@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import { connectDB } from "./config/db.js";
+import config from "./config/index.js";
 
 // Initialize app
 dotenv.config();
@@ -18,14 +19,14 @@ connectDB();
 // Routes
 
 // Error handling
-app.use((err, req, res, next) => {
+app.use((err, req, res) => {
   res.status(500).json({ message: err.message || "Something went wrong" });
 });
 
 app.get("/health", (req, res) => res.send("OK"));
 
 // Start server
-const PORT = process.env.PORT || 3000;
+const PORT = config.port || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port  http://localhost:${PORT}`);
 });
