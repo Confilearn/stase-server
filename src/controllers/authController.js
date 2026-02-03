@@ -28,6 +28,21 @@ export async function createAccount(req, res) {
       });
     }
 
+    // Extract clerkUserId from Authorization header for account creation
+    let clerkUserId = null;
+    const authHeader = req.headers.authorization;
+
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      clerkUserId = authHeader.substring(7); // Remove "Bearer " prefix
+    }
+
+    if (!clerkUserId) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing clerkUserId in Authorization header",
+      });
+    }
+
     // Check for existing user
     const existingUser = await User.findOne({
       $or: [{ email }, { username }],
@@ -42,10 +57,6 @@ export async function createAccount(req, res) {
 
     // Create user with default PIN
     const defaultPin = "1234";
-
-    // TODO: clerkUserId should be gotten from middleware
-    const clerkUserId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
     const hashedPin = await bcrypt.hash(defaultPin, 12);
 
     const user = new User({
