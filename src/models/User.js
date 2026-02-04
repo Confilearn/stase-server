@@ -34,7 +34,8 @@ const UserSchema = new mongoose.Schema(
     },
     transactionPin: {
       type: String,
-      required: true,
+      required: false,
+      default: "",
     },
     clerkUserId: {
       type: String,
@@ -45,7 +46,7 @@ const UserSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 /**

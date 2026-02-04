@@ -4,6 +4,7 @@ import {
   createAccount,
   checkUser,
   createUserTransactionPin,
+  checkTransactionPin,
 } from "../controllers/authController.js";
 
 const router = express.Router();
@@ -30,5 +31,11 @@ router.post("/check-user", verifyAuth, checkUser);
  * Create or update user's transaction PIN (requires authentication)
  */
 router.post("/create-transaction-pin", verifyAuth, createUserTransactionPin);
+
+/**
+ * GET /api/auth/check-transaction-pin
+ * Check if user has a transaction PIN set (requires authentication)
+ */
+router.get("/check-transaction-pin", verifyAuth, checkTransactionPin);
 
 export default router;

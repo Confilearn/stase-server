@@ -55,16 +55,12 @@ export async function createAccount(req, res) {
       });
     }
 
-    // Create user with default PIN
-    const defaultPin = "1234";
-    const hashedPin = await bcrypt.hash(defaultPin, 12);
-
+    // Create user without PIN (will default to empty string)
     const user = new User({
       firstName,
       lastName,
       username,
       email,
-      transactionPin: hashedPin,
       clerkUserId,
     });
 
@@ -242,6 +238,32 @@ export async function createUserTransactionPin(req, res) {
     res.status(200).json(response);
   } catch (error) {
     console.error("Error updating transaction PIN:", error);
+    res.status(500).json({
+      success: false,
+      error: "Internal server error",
+    });
+  }
+}
+
+/**
+ * Checks if a user has a transaction PIN set
+ * @param {Request} req - Express request object
+ * @param {Response} res - Express response object
+ */
+export async function checkTransactionPin(req, res) {
+  try {
+    // Get user from middleware (already authenticated)
+    const user = req.user;
+
+    // Check if transactionPin exists and is not empty
+    const hasPin = user.transactionPin && user.transactionPin.trim() !== "";
+
+    res.status(200).json({
+      success: true,
+      hasTransactionPin: hasPin,
+    });
+  } catch (error) {
+    console.error("Error checking transaction PIN:", error);
     res.status(500).json({
       success: false,
       error: "Internal server error",
