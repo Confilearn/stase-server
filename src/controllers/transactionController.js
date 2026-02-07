@@ -2,14 +2,20 @@ import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import BankAccount from "../models/BankAccount.js";
 import Transaction from "../models/Transaction.js";
-import User from "../models/User.js";
-import { generateTransactionReference } from "../utils/TxReference.js";
+import {
+  generateAccountNumber,
+  generateIBAN,
+  generateSortCode,
+  getBankName,
+  getBankAddress,
+  getSwiftCode,
+  SUPPORTED_CURRENCIES,
+} from "../utils/accountHelpers.js";
 import { isValidEmail, isValidUsername } from "../utils/validate.js";
 import {
   convertCurrency,
   getExchangeRate,
   isValidCurrencyPair,
-  SUPPORTED_CURRENCIES
 } from "../utils/currencyRates.js";
 import { getUserAccount, updateAccountBalance } from "./accountController.js";
 
@@ -32,7 +38,8 @@ export async function depositMoney(req, res) {
     if (!amount || !accountCurrency || !transactionPin) {
       return res.status(400).json({
         success: false,
-        error: "Missing required fields: amount, accountCurrency, transactionPin",
+        error:
+          "Missing required fields: amount, accountCurrency, transactionPin",
       });
     }
 
@@ -68,7 +75,10 @@ export async function depositMoney(req, res) {
       });
     }
 
-    const isPinValid = await bcrypt.compare(transactionPin, user.transactionPin);
+    const isPinValid = await bcrypt.compare(
+      transactionPin,
+      user.transactionPin,
+    );
     if (!isPinValid) {
       return res.status(401).json({
         success: false,
@@ -86,7 +96,11 @@ export async function depositMoney(req, res) {
     }
 
     // Update account balance
-    const updatedAccount = await updateAccountBalance(user._id, accountCurrency, amount);
+    const updatedAccount = await updateAccountBalance(
+      user._id,
+      accountCurrency,
+      amount,
+    );
     if (!updatedAccount) {
       return res.status(404).json({
         success: false,
@@ -122,7 +136,13 @@ export async function depositMoney(req, res) {
 
     await transaction.save();
 
-    // Build response
+    // Fetch complete user data after successful transaction
+    const allBankAccounts = await BankAccount.find({ userId: user._id });
+    const allTransactions = await Transaction.find({
+      $or: [{ from: user._id }, { to: user._id }],
+    }).sort({ date: -1 });
+
+    // Build response with complete user data
     const response = {
       success: true,
       message: `Successfully deposited ${amount} ${accountCurrency}`,
@@ -134,6 +154,44 @@ export async function depositMoney(req, res) {
         newBalance: newBalance,
         timestamp: transaction.date,
       },
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.username,
+        email: user.email,
+        clerkUserId: user.clerkUserId,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      },
+      bankAccounts: allBankAccounts.map((account) => ({
+        id: account._id,
+        accountNumber: account.accountNumber,
+        accountName: account.accountName,
+        bankName: account.bankName,
+        bankAddress: account.bankAddress,
+        accountCurrency: account.accountCurrency,
+        swiftCode: account.swiftCode,
+        iban: account.iban,
+        sortCode: account.sortCode,
+        balance: account.balance,
+        createdAt: account.createdAt,
+        updatedAt: account.updatedAt,
+      })),
+      transactions: allTransactions.map((transaction) => ({
+        id: transaction._id,
+        date: transaction.date,
+        status: transaction.status,
+        reference: transaction.reference,
+        from: transaction.from,
+        to: transaction.to,
+        transactionType: transaction.transactionType,
+        currency: transaction.currency,
+        amount: transaction.amount,
+        metadata: transaction.metadata,
+        createdAt: transaction.createdAt,
+        updatedAt: transaction.updatedAt,
+      })),
     };
 
     res.status(200).json(response);
@@ -160,7 +218,8 @@ export async function withdrawMoney(req, res) {
     if (!amount || !accountCurrency || !transactionPin) {
       return res.status(400).json({
         success: false,
-        error: "Missing required fields: amount, accountCurrency, transactionPin",
+        error:
+          "Missing required fields: amount, accountCurrency, transactionPin",
       });
     }
 
@@ -188,7 +247,10 @@ export async function withdrawMoney(req, res) {
       });
     }
 
-    const isPinValid = await bcrypt.compare(transactionPin, user.transactionPin);
+    const isPinValid = await bcrypt.compare(
+      transactionPin,
+      user.transactionPin,
+    );
     if (!isPinValid) {
       return res.status(401).json({
         success: false,
@@ -219,7 +281,11 @@ export async function withdrawMoney(req, res) {
     }
 
     // Update account balance
-    const updatedAccount = await updateAccountBalance(user._id, accountCurrency, -amount);
+    const updatedAccount = await updateAccountBalance(
+      user._id,
+      accountCurrency,
+      -amount,
+    );
     const newBalance = updatedAccount.balance;
 
     // Generate unique transaction reference
@@ -247,7 +313,13 @@ export async function withdrawMoney(req, res) {
 
     await transaction.save();
 
-    // Build response
+    // Fetch complete user data after successful transaction
+    const allBankAccounts = await BankAccount.find({ userId: user._id });
+    const allTransactions = await Transaction.find({
+      $or: [{ from: user._id }, { to: user._id }],
+    }).sort({ date: -1 });
+
+    // Build response with complete user data
     const response = {
       success: true,
       message: `Successfully withdrew ${amount} ${accountCurrency}`,
@@ -259,6 +331,44 @@ export async function withdrawMoney(req, res) {
         newBalance: newBalance,
         timestamp: transaction.date,
       },
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.username,
+        email: user.email,
+        clerkUserId: user.clerkUserId,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      },
+      bankAccounts: allBankAccounts.map((account) => ({
+        id: account._id,
+        accountNumber: account.accountNumber,
+        accountName: account.accountName,
+        bankName: account.bankName,
+        bankAddress: account.bankAddress,
+        accountCurrency: account.accountCurrency,
+        swiftCode: account.swiftCode,
+        iban: account.iban,
+        sortCode: account.sortCode,
+        balance: account.balance,
+        createdAt: account.createdAt,
+        updatedAt: account.updatedAt,
+      })),
+      transactions: allTransactions.map((transaction) => ({
+        id: transaction._id,
+        date: transaction.date,
+        status: transaction.status,
+        reference: transaction.reference,
+        from: transaction.from,
+        to: transaction.to,
+        transactionType: transaction.transactionType,
+        currency: transaction.currency,
+        amount: transaction.amount,
+        metadata: transaction.metadata,
+        createdAt: transaction.createdAt,
+        updatedAt: transaction.updatedAt,
+      })),
     };
 
     res.status(200).json(response);
@@ -295,7 +405,8 @@ export async function transferMoney(req, res) {
     if (!accountCurrency || amount === undefined) {
       return res.status(400).json({
         success: false,
-        message: "Missing required fields: accountCurrency and amount are required",
+        message:
+          "Missing required fields: accountCurrency and amount are required",
       });
     }
 
@@ -335,7 +446,8 @@ export async function transferMoney(req, res) {
     if (username && !isValidUsername(username)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid username format. Username must be 3-20 characters and contain only letters, numbers, and underscores",
+        message:
+          "Invalid username format. Username must be 3-20 characters and contain only letters, numbers, and underscores",
       });
     }
 
@@ -352,7 +464,8 @@ export async function transferMoney(req, res) {
       await session.abortTransaction();
       return res.status(404).json({
         success: false,
-        message: "Recipient not found. Please verify the email or username and try again",
+        message:
+          "Recipient not found. Please verify the email or username and try again",
       });
     }
 
@@ -408,8 +521,10 @@ export async function transferMoney(req, res) {
     const receiverReference = generateTransactionReference();
 
     // Update balances (use rounding to handle floating-point precision)
-    senderAccount.balance = Math.round((senderAccount.balance - amount) * 100) / 100;
-    receiverAccount.balance = Math.round((receiverAccount.balance + amount) * 100) / 100;
+    senderAccount.balance =
+      Math.round((senderAccount.balance - amount) * 100) / 100;
+    receiverAccount.balance =
+      Math.round((receiverAccount.balance + amount) * 100) / 100;
 
     // Save updated accounts
     await senderAccount.save({ session });
@@ -456,7 +571,13 @@ export async function transferMoney(req, res) {
     // Commit transaction
     await session.commitTransaction();
 
-    // Return success response
+    // Fetch complete user data after successful transaction
+    const allBankAccounts = await BankAccount.find({ userId: user._id });
+    const allTransactions = await Transaction.find({
+      $or: [{ from: user._id }, { to: user._id }],
+    }).sort({ date: -1 });
+
+    // Return success response with complete user data
     res.status(200).json({
       success: true,
       message: `Successfully transferred ${amount.toFixed(2)} ${accountCurrency} to ${receiver.firstName} ${receiver.lastName}`,
@@ -474,11 +595,49 @@ export async function transferMoney(req, res) {
         },
         timestamp: transactionDate.toISOString(),
       },
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.username,
+        email: user.email,
+        clerkUserId: user.clerkUserId,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      },
+      bankAccounts: allBankAccounts.map((account) => ({
+        id: account._id,
+        accountNumber: account.accountNumber,
+        accountName: account.accountName,
+        bankName: account.bankName,
+        bankAddress: account.bankAddress,
+        accountCurrency: account.accountCurrency,
+        swiftCode: account.swiftCode,
+        iban: account.iban,
+        sortCode: account.sortCode,
+        balance: account.balance,
+        createdAt: account.createdAt,
+        updatedAt: account.updatedAt,
+      })),
+      transactions: allTransactions.map((transaction) => ({
+        id: transaction._id,
+        date: transaction.date,
+        status: transaction.status,
+        reference: transaction.reference,
+        from: transaction.from,
+        to: transaction.to,
+        transactionType: transaction.transactionType,
+        currency: transaction.currency,
+        amount: transaction.amount,
+        metadata: transaction.metadata,
+        createdAt: transaction.createdAt,
+        updatedAt: transaction.updatedAt,
+      })),
     });
   } catch (error) {
     // Abort transaction on error
     await session.abortTransaction();
-    
+
     console.error("Error transferring money:", error);
 
     // Handle MongoDB duplicate key error
@@ -491,7 +650,8 @@ export async function transferMoney(req, res) {
 
     res.status(500).json({
       success: false,
-      message: "An unexpected error occurred during the transfer. Please try again later",
+      message:
+        "An unexpected error occurred during the transfer. Please try again later",
     });
   } finally {
     // End session
@@ -549,7 +709,9 @@ export async function convertMoney(req, res) {
     }
 
     // Validate supported currencies
-    if (!isValidCurrencyPair(convertFromAccountCurrency, convertToAccountCurrency)) {
+    if (
+      !isValidCurrencyPair(convertFromAccountCurrency, convertToAccountCurrency)
+    ) {
       return res.status(400).json({
         success: false,
         message: `Unsupported currency pair: ${currencyPairs}`,
@@ -557,7 +719,10 @@ export async function convertMoney(req, res) {
     }
 
     // Validate conversion rate matches our static rates
-    const expectedRate = getExchangeRate(convertFromAccountCurrency, convertToAccountCurrency);
+    const expectedRate = getExchangeRate(
+      convertFromAccountCurrency,
+      convertToAccountCurrency,
+    );
     const actualRate = convertToAmount / convertFromAmount;
 
     // Allow small rounding differences (0.001 tolerance)
@@ -612,7 +777,7 @@ export async function convertMoney(req, res) {
     const actualConvertedAmount = convertCurrency(
       convertFromAmount,
       convertFromAccountCurrency,
-      convertToAccountCurrency
+      convertToAccountCurrency,
     );
 
     // Verify the calculated amount matches the requested amount
@@ -633,7 +798,10 @@ export async function convertMoney(req, res) {
     await targetAccount.save({ session });
 
     // Create transactions
-    const exchangeRate = getExchangeRate(convertFromAccountCurrency, convertToAccountCurrency);
+    const exchangeRate = getExchangeRate(
+      convertFromAccountCurrency,
+      convertToAccountCurrency,
+    );
     const debitReference = generateTransactionReference();
     const creditReference = generateTransactionReference();
 
@@ -686,7 +854,13 @@ export async function convertMoney(req, res) {
     // Commit transaction
     await session.commitTransaction();
 
-    // Return success response
+    // Fetch complete user data after successful transaction
+    const allBankAccounts = await BankAccount.find({ userId: user._id });
+    const allTransactions = await Transaction.find({
+      $or: [{ from: user._id }, { to: user._id }],
+    }).sort({ date: -1 });
+
+    // Return success response with complete user data
     res.status(200).json({
       success: true,
       message: "Currency conversion completed successfully",
@@ -728,6 +902,44 @@ export async function convertMoney(req, res) {
           },
         },
       },
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.username,
+        email: user.email,
+        clerkUserId: user.clerkUserId,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      },
+      bankAccounts: allBankAccounts.map((account) => ({
+        id: account._id,
+        accountNumber: account.accountNumber,
+        accountName: account.accountName,
+        bankName: account.bankName,
+        bankAddress: account.bankAddress,
+        accountCurrency: account.accountCurrency,
+        swiftCode: account.swiftCode,
+        iban: account.iban,
+        sortCode: account.sortCode,
+        balance: account.balance,
+        createdAt: account.createdAt,
+        updatedAt: account.updatedAt,
+      })),
+      transactions: allTransactions.map((transaction) => ({
+        id: transaction._id,
+        date: transaction.date,
+        status: transaction.status,
+        reference: transaction.reference,
+        from: transaction.from,
+        to: transaction.to,
+        transactionType: transaction.transactionType,
+        currency: transaction.currency,
+        amount: transaction.amount,
+        metadata: transaction.metadata,
+        createdAt: transaction.createdAt,
+        updatedAt: transaction.updatedAt,
+      })),
     });
   } catch (error) {
     // Abort transaction on error
@@ -745,7 +957,8 @@ export async function convertMoney(req, res) {
 
     res.status(500).json({
       success: false,
-      message: "An unexpected error occurred during the conversion. Please try again later",
+      message:
+        "An unexpected error occurred during the conversion. Please try again later",
       error: error.message,
     });
   } finally {

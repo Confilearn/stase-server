@@ -270,3 +270,57 @@ export async function checkTransactionPin(req, res) {
     });
   }
 }
+
+/**
+ * Validates a user's transaction PIN
+ */
+export async function validateTransactionPin(req, res) {
+  try {
+    const { pin } = req.body;
+    const user = req.user;
+
+    if (!pin) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing required field: pin",
+      });
+    }
+
+    // Validate PIN format (4 digits)
+    if (!/^\d{4}$/.test(pin)) {
+      return res.status(400).json({
+        success: false,
+        error: "PIN must be exactly 4 digits",
+      });
+    }
+
+    // Check if user has a transaction PIN set
+    if (!user.transactionPin || user.transactionPin.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        error: "No transaction PIN set for this account",
+      });
+    }
+
+    // Compare the provided PIN with the stored hashed PIN
+    const isValidPin = await bcrypt.compare(pin, user.transactionPin);
+
+    if (!isValidPin) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid transaction PIN",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Transaction PIN validated successfully",
+    });
+  } catch (error) {
+    console.error("Error validating transaction PIN:", error);
+    res.status(500).json({
+      success: false,
+      error: "Internal server error",
+    });
+  }
+}
