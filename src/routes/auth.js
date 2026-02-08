@@ -25,7 +25,7 @@ router.post("/create-account", createAccount);
  * POST /api/auth/check-user
  * Check if a user exists by email or username
  */
-router.post("/check-user", verifyAuth, checkUser);
+router.post("/check-user", checkUser);
 
 /**
  * POST /api/auth/create-transaction-pin

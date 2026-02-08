@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
+import User from "../models/User.js";
 import BankAccount from "../models/BankAccount.js";
 import Transaction from "../models/Transaction.js";
 import {
@@ -11,6 +12,7 @@ import {
   getSwiftCode,
   SUPPORTED_CURRENCIES,
 } from "../utils/accountHelpers.js";
+import { generateTransactionReference } from "../utils/TxReference.js";
 import { isValidEmail, isValidUsername } from "../utils/validate.js";
 import {
   convertCurrency,
@@ -572,9 +574,9 @@ export async function transferMoney(req, res) {
     await session.commitTransaction();
 
     // Fetch complete user data after successful transaction
-    const allBankAccounts = await BankAccount.find({ userId: user._id });
+    const allBankAccounts = await BankAccount.find({ userId: sender._id });
     const allTransactions = await Transaction.find({
-      $or: [{ from: user._id }, { to: user._id }],
+      $or: [{ from: sender._id }, { to: sender._id }],
     }).sort({ date: -1 });
 
     // Return success response with complete user data
@@ -596,14 +598,14 @@ export async function transferMoney(req, res) {
         timestamp: transactionDate.toISOString(),
       },
       user: {
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        username: user.username,
-        email: user.email,
-        clerkUserId: user.clerkUserId,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
+        id: sender._id,
+        firstName: sender.firstName,
+        lastName: sender.lastName,
+        username: sender.username,
+        email: sender.email,
+        clerkUserId: sender.clerkUserId,
+        createdAt: sender.createdAt,
+        updatedAt: sender.updatedAt,
       },
       bankAccounts: allBankAccounts.map((account) => ({
         id: account._id,
@@ -635,8 +637,10 @@ export async function transferMoney(req, res) {
       })),
     });
   } catch (error) {
-    // Abort transaction on error
-    await session.abortTransaction();
+    // Only abort transaction if it's still active
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
 
     console.error("Error transferring money:", error);
 
@@ -942,8 +946,10 @@ export async function convertMoney(req, res) {
       })),
     });
   } catch (error) {
-    // Abort transaction on error
-    await session.abortTransaction();
+    // Only abort transaction if it's still active
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
 
     console.error("Error converting currency:", error);
 
