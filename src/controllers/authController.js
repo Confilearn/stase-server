@@ -78,6 +78,41 @@ export async function createAccount(req, res) {
       $or: [{ from: savedUser._id }, { to: savedUser._id }],
     });
 
+    // Helper function to get username by user ID
+    const getUsernameById = async (userId) => {
+      if (!userId) return null;
+      try {
+        const user = await User.findById(userId);
+        return user ? user.username : null;
+      } catch (error) {
+        console.error("Error fetching username:", error);
+        return null;
+      }
+    };
+
+    // Populate usernames for transactions
+    const transactionsWithUsernames = await Promise.all(
+      transactions.map(async (transaction) => {
+        const fromUsername = await getUsernameById(transaction.from);
+        const toUsername = await getUsernameById(transaction.to);
+
+        return {
+          id: transaction._id,
+          date: transaction.date,
+          status: transaction.status,
+          reference: transaction.reference,
+          from: fromUsername,
+          to: toUsername,
+          transactionType: transaction.transactionType,
+          currency: transaction.currency,
+          amount: transaction.amount,
+          metadata: transaction.metadata,
+          createdAt: transaction.createdAt,
+          updatedAt: transaction.updatedAt,
+        };
+      }),
+    );
+
     // Return complete user data (excluding sensitive information)
     const response = {
       user: {
@@ -102,19 +137,7 @@ export async function createAccount(req, res) {
         balance: account.balance,
         createdAt: account.createdAt,
       })),
-      transactions: transactions.map((transaction) => ({
-        id: transaction._id,
-        date: transaction.date,
-        status: transaction.status,
-        reference: transaction.reference,
-        from: transaction.from,
-        to: transaction.to,
-        transactionType: transaction.transactionType,
-        currency: transaction.currency,
-        amount: transaction.amount,
-        metadata: transaction.metadata,
-        createdAt: transaction.createdAt,
-      })),
+      transactions: transactionsWithUsernames,
     };
 
     res.status(201).json(response);
