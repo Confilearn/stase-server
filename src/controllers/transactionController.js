@@ -3,15 +3,7 @@ import bcrypt from "bcrypt";
 import User from "../models/User.js";
 import BankAccount from "../models/BankAccount.js";
 import Transaction from "../models/Transaction.js";
-import {
-  generateAccountNumber,
-  generateIBAN,
-  generateSortCode,
-  getBankName,
-  getBankAddress,
-  getSwiftCode,
-  SUPPORTED_CURRENCIES,
-} from "../utils/accountHelpers.js";
+import { SUPPORTED_CURRENCIES } from "../utils/accountHelpers.js";
 import { generateTransactionReference } from "../utils/TxReference.js";
 import { isValidEmail, isValidUsername } from "../utils/validate.js";
 import {
@@ -138,11 +130,46 @@ export async function depositMoney(req, res) {
 
     await transaction.save();
 
+    // Helper function to get username by user ID
+    const getUsernameById = async (userId) => {
+      if (!userId) return null;
+      try {
+        const user = await User.findById(userId);
+        return user ? user.username : null;
+      } catch (error) {
+        console.error("Error fetching username:", error);
+        return null;
+      }
+    };
+
     // Fetch complete user data after successful transaction
     const allBankAccounts = await BankAccount.find({ userId: user._id });
     const allTransactions = await Transaction.find({
       $or: [{ from: user._id }, { to: user._id }],
     }).sort({ date: -1 });
+
+    // Populate usernames for transactions
+    const transactionsWithUsernames = await Promise.all(
+      allTransactions.map(async (transaction) => {
+        const fromUsername = await getUsernameById(transaction.from);
+        const toUsername = await getUsernameById(transaction.to);
+
+        return {
+          id: transaction._id,
+          date: transaction.date,
+          status: transaction.status,
+          reference: transaction.reference,
+          from: fromUsername,
+          to: toUsername,
+          transactionType: transaction.transactionType,
+          currency: transaction.currency,
+          amount: transaction.amount,
+          metadata: transaction.metadata,
+          createdAt: transaction.createdAt,
+          updatedAt: transaction.updatedAt,
+        };
+      }),
+    );
 
     // Build response with complete user data
     const response = {
@@ -180,20 +207,7 @@ export async function depositMoney(req, res) {
         createdAt: account.createdAt,
         updatedAt: account.updatedAt,
       })),
-      transactions: allTransactions.map((transaction) => ({
-        id: transaction._id,
-        date: transaction.date,
-        status: transaction.status,
-        reference: transaction.reference,
-        from: transaction.from,
-        to: transaction.to,
-        transactionType: transaction.transactionType,
-        currency: transaction.currency,
-        amount: transaction.amount,
-        metadata: transaction.metadata,
-        createdAt: transaction.createdAt,
-        updatedAt: transaction.updatedAt,
-      })),
+      transactions: transactionsWithUsernames,
     };
 
     res.status(200).json(response);
@@ -315,11 +329,46 @@ export async function withdrawMoney(req, res) {
 
     await transaction.save();
 
+    // Helper function to get username by user ID
+    const getUsernameById = async (userId) => {
+      if (!userId) return null;
+      try {
+        const user = await User.findById(userId);
+        return user ? user.username : null;
+      } catch (error) {
+        console.error("Error fetching username:", error);
+        return null;
+      }
+    };
+
     // Fetch complete user data after successful transaction
     const allBankAccounts = await BankAccount.find({ userId: user._id });
     const allTransactions = await Transaction.find({
       $or: [{ from: user._id }, { to: user._id }],
     }).sort({ date: -1 });
+
+    // Populate usernames for transactions
+    const transactionsWithUsernames = await Promise.all(
+      allTransactions.map(async (transaction) => {
+        const fromUsername = await getUsernameById(transaction.from);
+        const toUsername = await getUsernameById(transaction.to);
+
+        return {
+          id: transaction._id,
+          date: transaction.date,
+          status: transaction.status,
+          reference: transaction.reference,
+          from: fromUsername,
+          to: toUsername,
+          transactionType: transaction.transactionType,
+          currency: transaction.currency,
+          amount: transaction.amount,
+          metadata: transaction.metadata,
+          createdAt: transaction.createdAt,
+          updatedAt: transaction.updatedAt,
+        };
+      }),
+    );
 
     // Build response with complete user data
     const response = {
@@ -357,20 +406,7 @@ export async function withdrawMoney(req, res) {
         createdAt: account.createdAt,
         updatedAt: account.updatedAt,
       })),
-      transactions: allTransactions.map((transaction) => ({
-        id: transaction._id,
-        date: transaction.date,
-        status: transaction.status,
-        reference: transaction.reference,
-        from: transaction.from,
-        to: transaction.to,
-        transactionType: transaction.transactionType,
-        currency: transaction.currency,
-        amount: transaction.amount,
-        metadata: transaction.metadata,
-        createdAt: transaction.createdAt,
-        updatedAt: transaction.updatedAt,
-      })),
+      transactions: transactionsWithUsernames,
     };
 
     res.status(200).json(response);
@@ -573,11 +609,46 @@ export async function transferMoney(req, res) {
     // Commit transaction
     await session.commitTransaction();
 
+    // Helper function to get username by user ID
+    const getUsernameById = async (userId) => {
+      if (!userId) return null;
+      try {
+        const user = await User.findById(userId);
+        return user ? user.username : null;
+      } catch (error) {
+        console.error("Error fetching username:", error);
+        return null;
+      }
+    };
+
     // Fetch complete user data after successful transaction
     const allBankAccounts = await BankAccount.find({ userId: sender._id });
     const allTransactions = await Transaction.find({
       $or: [{ from: sender._id }, { to: sender._id }],
     }).sort({ date: -1 });
+
+    // Populate usernames for transactions
+    const transactionsWithUsernames = await Promise.all(
+      allTransactions.map(async (transaction) => {
+        const fromUsername = await getUsernameById(transaction.from);
+        const toUsername = await getUsernameById(transaction.to);
+
+        return {
+          id: transaction._id,
+          date: transaction.date,
+          status: transaction.status,
+          reference: transaction.reference,
+          from: fromUsername,
+          to: toUsername,
+          transactionType: transaction.transactionType,
+          currency: transaction.currency,
+          amount: transaction.amount,
+          metadata: transaction.metadata,
+          createdAt: transaction.createdAt,
+          updatedAt: transaction.updatedAt,
+        };
+      }),
+    );
 
     // Return success response with complete user data
     res.status(200).json({
@@ -621,20 +692,7 @@ export async function transferMoney(req, res) {
         createdAt: account.createdAt,
         updatedAt: account.updatedAt,
       })),
-      transactions: allTransactions.map((transaction) => ({
-        id: transaction._id,
-        date: transaction.date,
-        status: transaction.status,
-        reference: transaction.reference,
-        from: transaction.from,
-        to: transaction.to,
-        transactionType: transaction.transactionType,
-        currency: transaction.currency,
-        amount: transaction.amount,
-        metadata: transaction.metadata,
-        createdAt: transaction.createdAt,
-        updatedAt: transaction.updatedAt,
-      })),
+      transactions: transactionsWithUsernames,
     });
   } catch (error) {
     // Only abort transaction if it's still active
@@ -858,11 +916,46 @@ export async function convertMoney(req, res) {
     // Commit transaction
     await session.commitTransaction();
 
+    // Helper function to get username by user ID
+    const getUsernameById = async (userId) => {
+      if (!userId) return null;
+      try {
+        const user = await User.findById(userId);
+        return user ? user.username : null;
+      } catch (error) {
+        console.error("Error fetching username:", error);
+        return null;
+      }
+    };
+
     // Fetch complete user data after successful transaction
     const allBankAccounts = await BankAccount.find({ userId: user._id });
     const allTransactions = await Transaction.find({
       $or: [{ from: user._id }, { to: user._id }],
     }).sort({ date: -1 });
+
+    // Populate usernames for transactions
+    const transactionsWithUsernames = await Promise.all(
+      allTransactions.map(async (transaction) => {
+        const fromUsername = await getUsernameById(transaction.from);
+        const toUsername = await getUsernameById(transaction.to);
+
+        return {
+          id: transaction._id,
+          date: transaction.date,
+          status: transaction.status,
+          reference: transaction.reference,
+          from: fromUsername,
+          to: toUsername,
+          transactionType: transaction.transactionType,
+          currency: transaction.currency,
+          amount: transaction.amount,
+          metadata: transaction.metadata,
+          createdAt: transaction.createdAt,
+          updatedAt: transaction.updatedAt,
+        };
+      }),
+    );
 
     // Return success response with complete user data
     res.status(200).json({
@@ -930,20 +1023,7 @@ export async function convertMoney(req, res) {
         createdAt: account.createdAt,
         updatedAt: account.updatedAt,
       })),
-      transactions: allTransactions.map((transaction) => ({
-        id: transaction._id,
-        date: transaction.date,
-        status: transaction.status,
-        reference: transaction.reference,
-        from: transaction.from,
-        to: transaction.to,
-        transactionType: transaction.transactionType,
-        currency: transaction.currency,
-        amount: transaction.amount,
-        metadata: transaction.metadata,
-        createdAt: transaction.createdAt,
-        updatedAt: transaction.updatedAt,
-      })),
+      transactions: transactionsWithUsernames,
     });
   } catch (error) {
     // Only abort transaction if it's still active
