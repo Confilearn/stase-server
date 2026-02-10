@@ -1,5 +1,6 @@
 import BankAccount from "../models/BankAccount.js";
 import Transaction from "../models/Transaction.js";
+import User from "../models/User.js";
 import {
   generateAccountNumber,
   generateIBAN,
