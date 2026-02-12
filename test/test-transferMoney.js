@@ -8,8 +8,8 @@ const testTransferMoney = async () => {
 
   // Test user token (replace with actual token / clerkId from your auth system)
   const SENDER_TOKEN = "user_1770028912566_t72t1i8y8";
-  const RECEIVER_EMAIL = "confidence@example.com";
-  const RECEIVER_USERNAME = "confidence";
+  const RECEIVER_EMAIL = "john.doe@example.com";
+  const RECEIVER_USERNAME = "johndoe";
 
   console.log("💸 Testing transferMoney API endpoint...\n");
 

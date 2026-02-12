@@ -17,7 +17,7 @@ const testCheckUser = async () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        email: "john.doe@example.com",
+        email: "confidence@example.com",
       }),
     });
 
@@ -44,7 +44,7 @@ const testCheckUser = async () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        username: "johndoe",
+        username: "confidence",
       }),
     });
 

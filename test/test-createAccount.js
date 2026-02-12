@@ -3,6 +3,11 @@
  * Tests user account creation functionality
  */
 
+// NOTE: To create another user in the database, change the test user token and update the body of the testCreateAccount route
+
+// Test user token (replace with actual token / clerkId from your auth system)
+const TEST_TOKEN = "user_1770028912566_t72t1i8y8";
+
 const testCreateAccount = async () => {
   try {
     const response = await fetch(
@@ -11,6 +16,7 @@ const testCreateAccount = async () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${TEST_TOKEN}`,
         },
         body: JSON.stringify({
           firstName: "Confidence",

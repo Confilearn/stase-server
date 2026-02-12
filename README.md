@@ -7,32 +7,38 @@ Express.js backend server for the Stase fintech application.
 - **User Management**: Account creation, authentication, PIN management
 - **Bank Accounts**: Multi-currency account management (USD, CAD, EUR, GBP)
 - **Transactions**: Deposits, withdrawals, transfers, currency conversions
-- **Security**: Transaction PIN verification, JWT-like authentication
+- **Security**: Transaction PIN verification, Bearer token authentication
 - **Database**: MongoDB with Mongoose ODM
 - **API Documentation**: RESTful API with proper error handling
+- **Testing**: Comprehensive test suite for all endpoints
 
 ## API Endpoints
 
 ### Authentication (`/api/auth`)
+
 - `POST /api/auth/create-account` - Create new user account
 - `POST /api/auth/check-user` - Check if user exists
 - `POST /api/auth/create-transaction-pin` - Set/update transaction PIN
 
 ### Account Management (`/api/account`)
+
 - `GET /api/account/user-details` - Get user details with accounts and transactions
 
 ### Transactions (`/api/transactions`)
+
 - `POST /api/transactions/deposit` - Deposit money
-- `POST /api/transactions/withdraw` - Withdraw money  
+- `POST /api/transactions/withdraw` - Withdraw money
 - `POST /api/transactions/transfer` - Transfer money to another user
 - `POST /api/transactions/convert` - Convert between currencies
 
 ### Health Check (`/api/health`)
+
 - `GET /api/health` - Server health status
 
 ## Setup
 
 ### Prerequisites
+
 - Node.js (v18 or higher)
 - MongoDB
 - npm or yarn
@@ -41,26 +47,32 @@ Express.js backend server for the Stase fintech application.
 
 1. Clone the repository and navigate to the server directory
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Create environment file:
+
    ```bash
-   cp .env.example .env
+   cp .env
    ```
 
 4. Update `.env` with your configuration:
+
    ```
-   PORT=3000
    MONGODB_URI=mongodb://localhost:27017/stase
+   PORT=3000
+   API_PREFIX=/api
+   NODE_ENV=development
    ```
 
 5. Start the server:
+
    ```bash
    # Development mode with nodemon
    npm run dev
-   
+
    # Production mode
    npm start
    ```
@@ -107,7 +119,7 @@ Authorization: Bearer <clerkUserId>
 ## Supported Currencies
 
 - USD (US Dollar)
-- CAD (Canadian Dollar) 
+- CAD (Canadian Dollar)
 - EUR (Euro)
 - GBP (British Pound)
 
@@ -122,9 +134,34 @@ All endpoints return consistent error responses:
 }
 ```
 
+## Testing
+
+The server includes a comprehensive test suite:
+
+### Running Tests
+
+```bash
+# Run all tests
+npm run test:api
+
+# Run specific test suites
+npm run test:auth          # Authentication tests
+npm run test:transactions  # Transaction tests
+npm run test:accounts      # Account tests
+npm test                   # Health check test only
+```
+
+### Test Coverage
+
+- **Authentication Tests**: Account creation, user validation, PIN management
+- **Transaction Tests**: Deposits, withdrawals, transfers, currency conversions
+- **Account Tests**: User details fetching
+- **Health Tests**: Server health checks
+
 ## Development
 
 The server includes:
+
 - Comprehensive error handling
 - Request validation
 - Transaction support for database operations
@@ -137,3 +174,22 @@ The server includes:
 - Input validation and sanitization
 - MongoDB transaction support for data consistency
 - Secure password hashing with bcrypt
+- Bearer token authentication using clerkUserId
+
+## Technology Stack
+
+- **Runtime**: Node.js (v18+)
+- **Framework**: Express.js v5
+- **Database**: MongoDB with Mongoose ODM
+- **Authentication**: Bearer tokens (clerkUserId)
+- **Security**: bcrypt for password hashing
+- **Development**: nodemon for hot reloading
+- **Testing**: Custom test suite
+
+## License
+
+MIT License - see LICENSE file for details.
+
+## Author
+
+Confilearn
