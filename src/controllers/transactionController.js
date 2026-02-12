@@ -145,7 +145,16 @@ export async function depositMoney(req, res) {
     // Fetch complete user data after successful transaction
     const allBankAccounts = await BankAccount.find({ userId: user._id });
     const allTransactions = await Transaction.find({
-      $or: [{ from: user._id }, { to: user._id }],
+      $or: [
+        {
+          from: user._id,
+          transactionType: { $in: ["send", "withdraw", "convert"] },
+        },
+        {
+          to: user._id,
+          transactionType: { $in: ["receive", "deposit", "convert"] },
+        },
+      ],
     }).sort({ date: -1 });
 
     // Populate usernames for transactions
@@ -344,7 +353,16 @@ export async function withdrawMoney(req, res) {
     // Fetch complete user data after successful transaction
     const allBankAccounts = await BankAccount.find({ userId: user._id });
     const allTransactions = await Transaction.find({
-      $or: [{ from: user._id }, { to: user._id }],
+      $or: [
+        {
+          from: user._id,
+          transactionType: { $in: ["send", "withdraw", "convert"] },
+        },
+        {
+          to: user._id,
+          transactionType: { $in: ["receive", "deposit", "convert"] },
+        },
+      ],
     }).sort({ date: -1 });
 
     // Populate usernames for transactions
@@ -624,7 +642,16 @@ export async function transferMoney(req, res) {
     // Fetch complete user data after successful transaction
     const allBankAccounts = await BankAccount.find({ userId: sender._id });
     const allTransactions = await Transaction.find({
-      $or: [{ from: sender._id }, { to: sender._id }],
+      $or: [
+        {
+          from: sender._id,
+          transactionType: { $in: ["send", "withdraw", "convert"] },
+        },
+        {
+          to: sender._id,
+          transactionType: { $in: ["receive", "deposit", "convert"] },
+        },
+      ],
     }).sort({ date: -1 });
 
     // Populate usernames for transactions
@@ -931,7 +958,16 @@ export async function convertMoney(req, res) {
     // Fetch complete user data after successful transaction
     const allBankAccounts = await BankAccount.find({ userId: user._id });
     const allTransactions = await Transaction.find({
-      $or: [{ from: user._id }, { to: user._id }],
+      $or: [
+        {
+          from: user._id,
+          transactionType: { $in: ["send", "withdraw", "convert"] },
+        },
+        {
+          to: user._id,
+          transactionType: { $in: ["receive", "deposit", "convert"] },
+        },
+      ],
     }).sort({ date: -1 });
 
     // Populate usernames for transactions

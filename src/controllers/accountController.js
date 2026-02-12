@@ -29,16 +29,16 @@ export async function fetchUserDetails(req, res) {
     const bankAccounts = await BankAccount.find({ userId: user._id });
 
     // Fetch transactions filtered by user's role in the transaction
+    console.log("Fetching transactions for user ID:", user._id);
     const transactions = await Transaction.find({
       $or: [
-        // Show send transactions only if user is the sender
-        { from: user._id, transactionType: "send" },
-        // Show receive transactions only if user is the receiver
-        { to: user._id, transactionType: "receive" },
-        // Show all other transaction types (deposit, withdraw, convert) for this user
         {
           from: user._id,
-          transactionType: { $in: ["deposit", "withdraw", "convert"] },
+          transactionType: { $in: ["send", "withdraw", "convert"] },
+        },
+        {
+          to: user._id,
+          transactionType: { $in: ["receive", "deposit", "convert"] },
         },
       ],
     }).sort({ date: -1 });
